@@ -54,6 +54,8 @@ const SHOWCASE_V4: Array<[string, string]> = [
   ["hover:opacity-[0.8]", "hover:opacity-80"],
 ]
 
+const VERSION_STORAGE_KEY = "tailwind-normalizer.version"
+
 // ─── Icons ────────────────────────────────────────────────────────────────────
 
 const ArrowRight = () => (
@@ -259,7 +261,7 @@ interface TailwindNormalizerProps {
 }
 
 export function TailwindNormalizer({
-  defaultVersion = 3,
+  defaultVersion = 4,
   className,
 }: TailwindNormalizerProps) {
   const [ver, setVer] = useState<TailwindVersion>(defaultVersion)
@@ -290,6 +292,25 @@ export function TailwindNormalizer({
   }, [])
 
   useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem(VERSION_STORAGE_KEY)
+      if (saved === "3" || saved === "4") {
+        setVer(Number(saved) as TailwindVersion)
+      }
+    } catch {
+      // Ignore storage errors in restricted browser contexts.
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(VERSION_STORAGE_KEY, String(ver))
+    } catch {
+      // Ignore storage errors in restricted browser contexts.
+    }
+  }, [ver])
+
+  useEffect(() => {
     if (result && input.trim()) setResult(normalize(input, ver))
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ver])
@@ -305,7 +326,11 @@ export function TailwindNormalizer({
       document.execCommand("copy")
       document.body.removeChild(ta)
     }
-    navigator.clipboard?.writeText(result.output).catch(fallback) ?? fallback()
+    if (navigator.clipboard?.writeText) {
+      navigator.clipboard.writeText(result.output).catch(fallback)
+    } else {
+      fallback()
+    }
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }, [result])
