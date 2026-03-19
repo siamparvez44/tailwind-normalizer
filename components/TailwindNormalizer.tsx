@@ -179,7 +179,7 @@ function VersionToggle({
   onChange: (v: TailwindVersion) => void
 }) {
   return (
-    <div className="inline-flex items-center rounded-lg border border-white/8 bg-white/[0.03] p-0.5">
+    <div className="inline-flex items-center rounded-lg border border-white/8 bg-white/3 p-0.5">
       {([3, 4] as TailwindVersion[]).map((v) => (
         <button
           key={v}
@@ -234,8 +234,8 @@ function LegendDot({ color }: { color: "lime" | "violet" | "amber" }) {
 
 function EmptyOutput() {
   return (
-    <div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-2 text-center">
-      <div className="flex size-9 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03]">
+    <div className="flex h-full min-h-50 flex-col items-center justify-center gap-2 text-center">
+      <div className="flex size-9 items-center justify-center rounded-xl border border-white/8 bg-white/3">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-zinc-700">
           <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
           <rect x="9" y="1.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -338,14 +338,14 @@ export function TailwindNormalizer({
       {/* ── Header row ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <VersionToggle ver={ver} onChange={handleVersionChange} />
-        <kbd className="hidden items-center gap-1 rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-mono text-[11px] text-zinc-600 sm:inline-flex">
+        <kbd className="hidden items-center gap-1 rounded-md border border-white/8 bg-white/3 px-2 py-1 font-mono text-[11px] text-zinc-600 sm:inline-flex">
           <span className="text-[10px]">⌘</span> Enter to normalize
         </kbd>
       </div>
 
       {/* ── v4 info banner ── */}
       {ver === 4 && (
-        <div className="flex items-start gap-3 rounded-xl border border-[#ccff00]/10 bg-[#ccff00]/[0.03] px-4 py-3">
+        <div className="flex items-start gap-3 rounded-xl border border-[#ccff00]/10 bg-[#ccff00]/3 px-4 py-3">
           <span className="mt-px shrink-0 text-[#ccff00]/60">
             <InfoIcon />
           </span>
@@ -392,12 +392,12 @@ export function TailwindNormalizer({
               spellCheck={false}
               rows={10}
               className={cn(
-                "w-full rounded-xl border bg-white/[0.025] px-4 py-3.5",
+                "w-full rounded-xl border bg-white/2.5 px-4 py-3.5",
                 "font-mono text-[13px] leading-relaxed text-zinc-200",
                 "placeholder:text-zinc-700/60",
                 "outline-none transition-all duration-150 resize-y",
-                "border-white/8 hover:border-white/[0.12]",
-                "focus:border-[#ccff00]/25 focus:bg-[#ccff00]/[0.015] focus:shadow-[0_0_0_3px_rgba(204,255,0,0.04)]",
+                "border-white/8 hover:border-white/12",
+                "focus:border-[#ccff00]/25 focus:bg-[#ccff00]/1.5 focus:shadow-[0_0_0_3px_rgba(204,255,0,0.04)]",
               )}
             />
           </div>
@@ -430,10 +430,10 @@ export function TailwindNormalizer({
 
           <div
             className={cn(
-              "flex min-h-[258px] flex-1 flex-col rounded-xl border transition-colors duration-150",
+              "flex min-h-64.5 flex-1 flex-col rounded-xl border transition-colors duration-150",
               hasResult
-                ? "border-white/10 bg-white/[0.025]"
-                : "border-white/6 bg-white/[0.015]",
+                ? "border-white/10 bg-white/2.5"
+                : "border-white/6 bg-white/1.5",
             )}
           >
             {!hasResult ? (

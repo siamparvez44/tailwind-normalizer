@@ -34,7 +34,7 @@ export default function NormalizerPage() {
 
       {/* Main */}
       <main className="mx-auto max-w-5xl px-6 py-10 sm:px-8">
-        <TailwindNormalizer defaultVersion={3} />
+        <TailwindNormalizer defaultVersion={4} />
       </main>
     </div>
   )
