@@ -191,7 +191,7 @@ function VersionToggle({
               : "text-zinc-500 hover:text-zinc-300",
           )}
         >
-          v{v}{v === 4 ? ".2" : ""}
+          v{v}
         </button>
       ))}
     </div>
