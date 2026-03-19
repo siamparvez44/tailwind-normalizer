@@ -1,40 +1,34 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
 import {
   type NormalizedToken,
   type NormalizeResult,
   type TailwindVersion,
-  DEPRECATED,
   detectMode,
   normalize,
 } from "@/lib/tw-normalizer"
 
-// ─── Showcase data ────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const SHOWCASE_V3: Array<[string, string]> = [
   ["text-[1rem]", "text-base"],
   ["text-[0.875rem]", "text-sm"],
-  ["text-[1.5rem]", "text-2xl"],
   ["font-[700]", "font-bold"],
   ["p-[1rem]", "p-4"],
   ["gap-[0.5rem]", "gap-2"],
-  ["mt-[2rem]", "mt-8"],
   ["w-[100%]", "w-full"],
   ["h-[100vh]", "h-screen"],
+  ["min-h-[110px]", "min-h-27.5"],
   ["rounded-[0.5rem]", "rounded-lg"],
+  ["border-white/[0.08]", "border-white/8"],
+  ["bg-white/[0.04]", "bg-white/4"],
   ["display: flex", "flex"],
   ["font-size: 1rem", "text-base"],
   ["padding: 1rem 2rem", "py-4 px-8"],
-  ["align-items: center", "items-center"],
   ["flex-shrink-0", "shrink-0"],
   ["overflow-ellipsis", "text-ellipsis"],
-  ["flex-grow", "grow"],
-  ["font-hairline", "font-thin"],
   ["sm:text-[0.875rem]", "sm:text-sm"],
   ["hover:opacity-[0.8]", "hover:opacity-80"],
 ]
@@ -50,26 +44,54 @@ const SHOWCASE_V4: Array<[string, string]> = [
   ["rounded-[0.5rem]", "rounded-lg"],
   ["rounded-[0.25rem]", "rounded-sm"],
   ["rounded-[0.125rem]", "rounded-xs"],
+  ["border-white/[0.08]", "border-white/8"],
+  ["bg-white/[0.04]", "bg-white/4"],
   ["display: flex", "flex"],
   ["font-size: 1rem", "text-base"],
   ["padding: 1rem 2rem", "py-4 px-8"],
-  ["justify-content: space-between", "justify-between"],
   ["flex-shrink-0", "shrink-0"],
-  ["overflow-ellipsis", "text-ellipsis"],
-  ["flex-grow", "grow"],
   ["xl:text-[0.75rem]", "xl:text-xs"],
-  ["sm:p-[1rem]", "sm:p-4"],
   ["hover:opacity-[0.8]", "hover:opacity-80"],
 ]
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
+// ─── Icons ────────────────────────────────────────────────────────────────────
+
+const ArrowRight = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6h8M7 3l3 3-3 3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const CheckIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+  </svg>
+)
+
+const CopyIcon = () => (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none">
+    <rect x="4" y="4" width="7" height="7" rx="1" stroke="currentColor" strokeWidth="1.2" />
+    <path d="M2 8V2a1 1 0 0 1 1-1h6" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+  </svg>
+)
+
+const InfoIcon = () => (
+  <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+    <circle cx="7" cy="7" r="6" stroke="currentColor" strokeWidth="1.2" />
+    <path d="M7 4.5v4M7 10v.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" />
+  </svg>
+)
+
+// ─── Token chip ───────────────────────────────────────────────────────────────
 
 function TokenChip({ token }: { token: NormalizedToken }) {
+  const base = "inline-block rounded px-1.5 py-0.5 font-mono text-[13px] leading-snug transition-colors duration-100"
+
   if (token.state === "changed") {
     return (
       <span
         title={`was: ${token.original}`}
-        className="inline-block rounded px-1 py-px font-medium text-[#ccff00] bg-[#ccff00]/10 cursor-help"
+        className={cn(base, "cursor-help bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/15")}
       >
         {token.result}
       </span>
@@ -78,8 +100,8 @@ function TokenChip({ token }: { token: NormalizedToken }) {
   if (token.state === "deprecated") {
     return (
       <span
-        title={`deprecated: ${token.original}`}
-        className="inline-block rounded px-1 py-px font-medium text-purple-400 bg-purple-400/10 cursor-help"
+        title={`deprecated alias — was: ${token.original}`}
+        className={cn(base, "cursor-help bg-violet-500/10 text-violet-400 hover:bg-violet-500/15")}
       >
         {token.result}
       </span>
@@ -87,46 +109,144 @@ function TokenChip({ token }: { token: NormalizedToken }) {
   }
   if (token.state === "unknown") {
     return (
-      <span className="inline-block rounded px-1 py-px text-amber-400 bg-amber-400/10">
+      <span
+        title="No canonical Tailwind equivalent found"
+        className={cn(base, "cursor-help bg-amber-500/10 text-amber-400 hover:bg-amber-500/15")}
+      >
         {token.result}
       </span>
     )
   }
-  return <span>{token.result}</span>
+  return (
+    <span className="font-mono text-[13px] leading-snug text-zinc-500">
+      {token.result}
+    </span>
+  )
 }
 
-function StatCard({
-  value,
-  label,
-  accent,
+// ─── Sub-components ───────────────────────────────────────────────────────────
+
+function ModeBadge({ mode }: { mode: "css" | "tailwind" }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide ring-1",
+        mode === "css"
+          ? "bg-sky-500/10 text-sky-400 ring-sky-500/20"
+          : "bg-[#ccff00]/10 text-[#ccff00] ring-[#ccff00]/20",
+      )}
+    >
+      <span className={cn("size-1.5 rounded-full", mode === "css" ? "bg-sky-400" : "bg-[#ccff00]")} />
+      {mode === "css" ? "CSS" : "Tailwind"}
+    </span>
+  )
+}
+
+function CopyButton({
+  onCopy,
+  copied,
+  disabled,
+  variant = "default",
 }: {
-  value: number
-  label: string
-  accent?: "green" | "amber"
+  onCopy: () => void
+  copied: boolean
+  disabled?: boolean
+  variant?: "default" | "ghost"
 }) {
   return (
-    <div className="rounded-xl border border-white/[0.08] bg-white/[0.04] p-4">
-      <p
-        className={cn(
-          "font-mono text-2xl font-bold leading-none",
-          accent === "green" && "text-[#ccff00]",
-          accent === "amber" && "text-amber-400",
-          !accent && "text-zinc-100",
-        )}
-      >
-        {value}
-      </p>
-      <p className="mt-1.5 text-[11px] text-zinc-500">{label}</p>
+    <button
+      onClick={onCopy}
+      disabled={disabled}
+      className={cn(
+        "inline-flex items-center gap-1.5 rounded-md font-mono text-xs font-medium transition-all duration-150 disabled:cursor-not-allowed disabled:opacity-30",
+        variant === "default"
+          ? "border border-white/10 bg-white/4 px-3 py-1.5 text-zinc-400 hover:border-white/20 hover:bg-white/8 hover:text-zinc-200"
+          : "px-2 py-1 text-zinc-600 hover:bg-white/6 hover:text-zinc-400",
+        copied && "border-[#ccff00]/20 bg-[#ccff00]/8 text-[#ccff00]",
+      )}
+    >
+      {copied ? <CheckIcon /> : <CopyIcon />}
+      {copied ? "Copied" : "Copy"}
+    </button>
+  )
+}
+
+function VersionToggle({
+  ver,
+  onChange,
+}: {
+  ver: TailwindVersion
+  onChange: (v: TailwindVersion) => void
+}) {
+  return (
+    <div className="inline-flex items-center rounded-lg border border-white/8 bg-white/[0.03] p-0.5">
+      {([3, 4] as TailwindVersion[]).map((v) => (
+        <button
+          key={v}
+          onClick={() => onChange(v)}
+          className={cn(
+            "rounded-md px-3.5 py-1.5 font-mono text-xs font-medium transition-all duration-150",
+            ver === v
+              ? "bg-[#ccff00] text-zinc-900 shadow-sm"
+              : "text-zinc-500 hover:text-zinc-300",
+          )}
+        >
+          v{v}{v === 4 ? ".2" : ""}
+        </button>
+      ))}
     </div>
   )
 }
 
-function ShowcaseCard({ from, to }: { from: string; to: string }) {
+function StatBadge({
+  value,
+  label,
+  color,
+}: {
+  value: number
+  label: string
+  color: "lime" | "violet" | "amber" | "zinc"
+}) {
+  const colors = {
+    lime: "text-[#ccff00]",
+    violet: "text-violet-400",
+    amber: "text-amber-400",
+    zinc: "text-zinc-500",
+  }
   return (
-    <div className="rounded-md border border-white/[0.08] bg-white/[0.04] px-3 py-2.5 font-mono text-xs">
-      <span className="text-zinc-500 line-through">{from}</span>
-      <span className="mx-1.5 text-zinc-600">→</span>
-      <span className="text-[#ccff00]">{to}</span>
+    <span className="flex items-baseline gap-1.5">
+      <span className={cn("font-mono text-lg font-semibold tabular-nums leading-none", colors[color])}>
+        {value}
+      </span>
+      <span className="text-[11px] text-zinc-600">{label}</span>
+    </span>
+  )
+}
+
+function LegendDot({ color }: { color: "lime" | "violet" | "amber" }) {
+  const colors = {
+    lime: "bg-[#ccff00]/40",
+    violet: "bg-violet-400/40",
+    amber: "bg-amber-400/40",
+  }
+  return <span className={cn("inline-block size-2 shrink-0 rounded-sm", colors[color])} />
+}
+
+function EmptyOutput() {
+  return (
+    <div className="flex h-full min-h-[200px] flex-col items-center justify-center gap-2 text-center">
+      <div className="flex size-9 items-center justify-center rounded-xl border border-white/8 bg-white/[0.03]">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-zinc-700">
+          <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+          <rect x="9" y="1.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+          <rect x="1.5" y="9" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
+          <path d="M9 11.75h5.5M11.75 9v5.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round" />
+        </svg>
+      </div>
+      <div>
+        <p className="text-sm text-zinc-600">Output will appear here</p>
+        <p className="mt-0.5 text-xs text-zinc-700">Hover tokens to see what changed</p>
+      </div>
     </div>
   )
 }
@@ -134,9 +254,7 @@ function ShowcaseCard({ from, to }: { from: string; to: string }) {
 // ─── Main component ───────────────────────────────────────────────────────────
 
 interface TailwindNormalizerProps {
-  /** Initial version to use */
   defaultVersion?: TailwindVersion
-  /** Override container className */
   className?: string
 }
 
@@ -150,29 +268,31 @@ export function TailwindNormalizer({
   const [liveMode, setLiveMode] = useState<"css" | "tailwind" | null>(null)
   const [copied, setCopied] = useState(false)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const outputRef = useRef<HTMLDivElement>(null)
 
   const showcase = ver === 4 ? SHOWCASE_V4 : SHOWCASE_V3
 
-  const handleInput = useCallback(
-    (value: string) => {
-      setInput(value)
-      setLiveMode(value.trim() ? detectMode(value) : null)
-    },
-    [],
-  )
+  const handleInput = useCallback((value: string) => {
+    setInput(value)
+    setLiveMode(value.trim() ? detectMode(value) : null)
+  }, [])
 
   const handleNormalize = useCallback(() => {
     if (!input.trim()) return
     setResult(normalize(input, ver))
+    setTimeout(() => {
+      outputRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })
+    }, 50)
   }, [input, ver])
 
-  const handleVersionChange = useCallback(
-    (v: TailwindVersion) => {
-      setVer(v)
-      if (result) setResult(normalize(input, v))
-    },
-    [input, result],
-  )
+  const handleVersionChange = useCallback((v: TailwindVersion) => {
+    setVer(v)
+  }, [])
+
+  useEffect(() => {
+    if (result && input.trim()) setResult(normalize(input, ver))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ver])
 
   const handleCopy = useCallback(() => {
     if (!result?.output) return
@@ -187,7 +307,7 @@ export function TailwindNormalizer({
     }
     navigator.clipboard?.writeText(result.output).catch(fallback) ?? fallback()
     setCopied(true)
-    setTimeout(() => setCopied(false), 1500)
+    setTimeout(() => setCopied(false), 2000)
   }, [result])
 
   const handleClear = useCallback(() => {
@@ -207,169 +327,194 @@ export function TailwindNormalizer({
     [handleNormalize],
   )
 
-  const hasDeprecated = result?.stats.deprecated ?? 0 > 0
+  const totalReplaced = (result?.stats.fixed ?? 0) + (result?.stats.deprecated ?? 0)
+  const hasResult = result !== null
+  const hasDeprecated = (result?.stats.deprecated ?? 0) > 0
+  const hasArbitrary = (result?.stats.arbitrary ?? 0) > 0
 
   return (
-    <div className={cn("space-y-6", className)}>
-      {/* Version toggle */}
-      <div className="flex gap-2">
-        {([3, 4] as TailwindVersion[]).map((v) => (
-          <button
-            key={v}
-            onClick={() => handleVersionChange(v)}
-            className={cn(
-              "rounded-full border px-3.5 py-1.5 font-mono text-xs font-medium transition-all",
-              ver === v
-                ? "border-[#ccff00] bg-[#ccff00] text-zinc-900 font-bold"
-                : "border-white/15 text-zinc-500 hover:bg-white/6 hover:text-zinc-300",
-            )}
-          >
-            Tailwind v{v}
-            {v === 4 && " / v4.2"}
-          </button>
-        ))}
+    <div className={cn("flex flex-col gap-6", className)}>
+
+      {/* ── Header row ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <VersionToggle ver={ver} onChange={handleVersionChange} />
+        <kbd className="hidden items-center gap-1 rounded-md border border-white/8 bg-white/[0.03] px-2 py-1 font-mono text-[11px] text-zinc-600 sm:inline-flex">
+          <span className="text-[10px]">⌘</span> Enter to normalize
+        </kbd>
       </div>
 
-      {/* v4 info banner */}
+      {/* ── v4 info banner ── */}
       {ver === 4 && (
-        <div className="rounded-md border border-white/8 border-l-[3px] border-l-[#ccff00] bg-white/3 px-3.5 py-2.5 text-xs text-zinc-500 leading-relaxed">
-          v4 font-size:{" "}
-          <code className="text-[#ccff00] font-mono">text-xs</code>=12px,{" "}
-          <code className="text-[#ccff00] font-mono">text-sm</code>=14px,{" "}
-          <code className="text-[#ccff00] font-mono">text-base</code>=16px.
-          Values below 12px stay amber. Border-radius:{" "}
-          <code className="text-[#ccff00] font-mono">rounded-xs</code>=2px,{" "}
-          <code className="text-[#ccff00] font-mono">rounded-sm</code>=4px.
-          Unit conversion assumes{" "}
-          <code className="text-[#ccff00] font-mono">1rem = 16px</code>.
+        <div className="flex items-start gap-3 rounded-xl border border-[#ccff00]/10 bg-[#ccff00]/[0.03] px-4 py-3">
+          <span className="mt-px shrink-0 text-[#ccff00]/60">
+            <InfoIcon />
+          </span>
+          <p className="text-[12px] leading-relaxed text-zinc-500">
+            v4 font sizes:{" "}
+            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">text-xs</code>=12px{" "}
+            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">text-sm</code>=14px{" "}
+            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">text-base</code>=16px.{" "}
+            Radius:{" "}
+            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">rounded-xs</code>=2px{" "}
+            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">rounded-sm</code>=4px.{" "}
+            Assumes <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">1rem=16px</code>.
+          </p>
         </div>
       )}
 
-      {/* Input */}
-      <div className="space-y-2">
-        <div className="flex items-center gap-2">
-          <label className="text-[11px] font-medium uppercase tracking-widest text-zinc-500">
-            Input
-          </label>
-          {liveMode && (
-            <Badge
-              variant="outline"
+      {/* ── Editor + Output (side-by-side on lg) ── */}
+      <div className="grid gap-4 lg:grid-cols-2">
+
+        {/* Input */}
+        <div className="flex flex-col gap-2">
+          <div className="flex h-6 items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-600">Input</span>
+              {liveMode && <ModeBadge mode={liveMode} />}
+            </div>
+            {input && (
+              <button
+                onClick={handleClear}
+                className="text-[11px] text-zinc-700 transition-colors hover:text-zinc-400"
+              >
+                Clear
+              </button>
+            )}
+          </div>
+
+          <div className="relative flex-1">
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => handleInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder={`Paste Tailwind classes or CSS\n\ntext-[1rem] font-[700] p-[16px]\ndisplay: flex; gap: 0.5rem;\nflex-shrink-0 overflow-ellipsis`}
+              spellCheck={false}
+              rows={10}
               className={cn(
-                "rounded-full border px-2 py-0 text-[11px] font-mono h-auto",
-                liveMode === "css"
-                  ? "border-blue-500/30 bg-blue-500/10 text-blue-400"
-                  : "border-[#ccff00]/20 bg-[#ccff00]/10 text-[#ccff00]",
+                "w-full rounded-xl border bg-white/[0.025] px-4 py-3.5",
+                "font-mono text-[13px] leading-relaxed text-zinc-200",
+                "placeholder:text-zinc-700/60",
+                "outline-none transition-all duration-150 resize-y",
+                "border-white/8 hover:border-white/[0.12]",
+                "focus:border-[#ccff00]/25 focus:bg-[#ccff00]/[0.015] focus:shadow-[0_0_0_3px_rgba(204,255,0,0.04)]",
               )}
-            >
-              {liveMode === "css" ? "CSS" : "Tailwind"}
-            </Badge>
-          )}
-        </div>
-        <Textarea
-          ref={textareaRef}
-          value={input}
-          onChange={(e) => handleInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Paste Tailwind classes, CSS declarations, or a CSS block..."
-          className="min-h-[110px] resize-y border-white/[0.08] bg-white/[0.04] font-mono text-[13px] leading-relaxed text-zinc-100 placeholder:text-zinc-600 focus-visible:ring-[#ccff00]/30 focus-visible:border-white/20"
-          spellCheck={false}
-        />
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
+            />
+          </div>
+
+          <button
             onClick={handleNormalize}
             disabled={!input.trim()}
-            className="bg-[#ccff00] text-zinc-900 font-semibold hover:bg-[#d4ff1a] disabled:opacity-40"
+            className={cn(
+              "flex h-10 w-full items-center justify-center gap-2 rounded-lg",
+              "font-mono text-sm font-semibold tracking-wide",
+              "transition-all duration-150 active:scale-[0.985]",
+              "bg-[#ccff00] text-zinc-900",
+              "hover:bg-[#d9ff33] hover:shadow-[0_0_24px_rgba(204,255,0,0.2)]",
+              "disabled:cursor-not-allowed disabled:opacity-20 disabled:shadow-none",
+            )}
           >
+            <ArrowRight />
             Normalize
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleCopy}
-            disabled={!result?.output}
-            className="border-white/15 bg-transparent text-zinc-300 hover:bg-white/[0.06]"
+          </button>
+        </div>
+
+        {/* Output */}
+        <div ref={outputRef} className="flex flex-col gap-2">
+          <div className="flex h-6 items-center justify-between">
+            <span className="text-[11px] font-medium uppercase tracking-widest text-zinc-600">Output</span>
+            {hasResult && (
+              <CopyButton onCopy={handleCopy} copied={copied} disabled={!result?.output} variant="ghost" />
+            )}
+          </div>
+
+          <div
+            className={cn(
+              "flex min-h-[258px] flex-1 flex-col rounded-xl border transition-colors duration-150",
+              hasResult
+                ? "border-white/10 bg-white/[0.025]"
+                : "border-white/6 bg-white/[0.015]",
+            )}
           >
-            {copied ? "Copied!" : "Copy output"}
-          </Button>
-          <Button
-            variant="ghost"
-            onClick={handleClear}
-            className="text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.06]"
-          >
-            Clear
-          </Button>
-          <span className="ml-auto text-[11px] text-zinc-600">
-            ⌘ + Enter to normalize
-          </span>
+            {!hasResult ? (
+              <EmptyOutput />
+            ) : (
+              <div className="flex flex-col gap-0 divide-y divide-white/6">
+
+                {/* Token area */}
+                <div className="flex flex-wrap gap-1 px-4 py-3.5 leading-loose">
+                  {result.tokens.map((token, i) => (
+                    <TokenChip key={i} token={token} />
+                  ))}
+                </div>
+
+                {/* Stats + copy */}
+                <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+                    {totalReplaced > 0 && (
+                      <StatBadge value={totalReplaced} label="normalized" color="lime" />
+                    )}
+                    {hasDeprecated && (
+                      <StatBadge value={result.stats.deprecated} label="deprecated" color="violet" />
+                    )}
+                    {hasArbitrary && (
+                      <StatBadge value={result.stats.arbitrary} label="no match" color="amber" />
+                    )}
+                    <StatBadge value={result.stats.ok} label="unchanged" color="zinc" />
+                  </div>
+                  <CopyButton onCopy={handleCopy} copied={copied} disabled={!result?.output} />
+                </div>
+
+                {/* Legend */}
+                {(totalReplaced > 0 || hasDeprecated || hasArbitrary) && (
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-2.5">
+                    {totalReplaced > 0 && (
+                      <span className="flex items-center gap-1.5 text-[11px] text-zinc-600">
+                        <LegendDot color="lime" /> Replaced
+                      </span>
+                    )}
+                    {hasDeprecated && (
+                      <span className="flex items-center gap-1.5 text-[11px] text-zinc-600">
+                        <LegendDot color="violet" /> Deprecated alias
+                      </span>
+                    )}
+                    {hasArbitrary && (
+                      <span className="flex items-center gap-1.5 text-[11px] text-zinc-600">
+                        <LegendDot color="amber" /> No canonical match
+                      </span>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Output */}
-      {result && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <label className="text-[11px] font-medium uppercase tracking-widest text-zinc-500">
-              Output
-            </label>
-            <div className="flex items-center gap-3 text-[11px] text-zinc-600">
-              {result.stats.fixed + result.stats.deprecated > 0 && (
-                <span>{result.stats.fixed + result.stats.deprecated} replacement{result.stats.fixed + result.stats.deprecated !== 1 ? "s" : ""}</span>
-              )}
-              <button
-                onClick={handleCopy}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors"
-              >
-                {copied ? "Copied!" : "Copy"}
-              </button>
-            </div>
-          </div>
-          <div className="min-h-[52px] rounded-xl border border-white/[0.08] bg-white/[0.04] p-4 font-mono text-[13px] leading-loose break-all">
-            {result.tokens.map((token, i) => (
-              <span key={i}>
-                <TokenChip token={token} />
-                {i < result.tokens.length - 1 ? " " : ""}
-              </span>
-            ))}
-          </div>
-
-          {/* Legend */}
-          <div className="flex flex-wrap gap-4 text-[12px] text-zinc-500">
-            <span className="flex items-center gap-1.5">
-              <span className="inline-block h-2 w-2 rounded-sm bg-[#ccff00]/40" />
-              Replaced
-            </span>
-            {hasDeprecated && (
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 rounded-sm bg-purple-400/50" />
-                Deprecated alias
-              </span>
-            )}
-            {result.stats.arbitrary > 0 && (
-              <span className="flex items-center gap-1.5">
-                <span className="inline-block h-2 w-2 rounded-sm bg-amber-400/40" />
-                No canonical match
-              </span>
-            )}
-          </div>
-
-          {/* Stats */}
-          <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
-            <StatCard value={result.stats.total} label="total" />
-            <StatCard value={result.stats.fixed + result.stats.deprecated} label="normalized" accent="green" />
-            <StatCard value={result.stats.arbitrary} label="still arbitrary" accent="amber" />
-            <StatCard value={result.stats.ok} label="already canonical" />
-          </div>
+      {/* ── Showcase ── */}
+      <div className="mt-4">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="h-px flex-1 bg-white/6" />
+          <span className="shrink-0 text-[11px] font-medium uppercase tracking-widest text-zinc-700">
+            Common replacements · v{ver}
+          </span>
+          <div className="h-px flex-1 bg-white/6" />
         </div>
-      )}
 
-      {/* Showcase */}
-      <div className="space-y-3 pt-2">
-        <div className="h-px bg-white/[0.06]" />
-        <p className="text-[11px] font-medium uppercase tracking-widest text-zinc-500">
-          Common replacements — v{ver}
-        </p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-3">
           {showcase.map(([from, to]) => (
-            <ShowcaseCard key={from} from={from} to={to} />
+            <div
+              key={from}
+              className="group flex items-center gap-2 rounded-md px-3 py-2 transition-colors duration-100 hover:bg-white/4"
+            >
+              <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-zinc-600 line-through decoration-zinc-700/60">
+                {from}
+              </code>
+              <span className="shrink-0 text-zinc-700 transition-colors group-hover:text-zinc-500">
+                <ArrowRight />
+              </span>
+              <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-[#ccff00]">{to}</code>
+            </div>
           ))}
         </div>
       </div>

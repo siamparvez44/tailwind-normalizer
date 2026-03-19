@@ -29,16 +29,22 @@ export interface NormalizeResult {
 
 // ─── Scales ──────────────────────────────────────────────────────────────────
 
-const SPACING_STEPS = [
-  0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 5, 6, 7, 8, 9, 10, 11, 12, 14, 16, 20, 24,
-  28, 32, 36, 40, 44, 48, 52, 56, 60, 64, 72, 80, 96,
-]
-
+/**
+ * Convert a pixel value to its Tailwind spacing scale number.
+ * Tailwind JIT accepts any value that maps to a whole number of pixels,
+ * i.e. any multiple of 0.25 (since 1 spacing unit = 0.25rem = 4px).
+ * Examples: 110px → 27.5, 112px → 28, 6px → 1.5, 3px → 0.75
+ */
 function pxToSpacingScale(absPx: number): string | null {
   if (absPx === 0) return "0"
   if (absPx === 1) return "px"
-  const scale = Math.round((absPx / 4) * 10) / 10
-  return SPACING_STEPS.includes(scale) ? String(scale) : null
+  const scale = absPx / 4
+  // Round to nearest 0.25 (nearest whole pixel)
+  const rounded = Math.round(scale * 4) / 4
+  // Reject if the px value isn't a whole number of pixels
+  if (Math.abs(rounded - scale) > 0.001) return null
+  // Format cleanly — avoid float noise like 27.500000000000004
+  return parseFloat(rounded.toFixed(4)).toString()
 }
 
 const FONT_V3: Record<number, string> = {
@@ -516,16 +522,18 @@ export function convertOpacityMod(cls: string): string | null {
   if (!m) return null
   const [, base, val] = m
   const n = parseFloat(val)
-  if (isNaN(n)) return null
-  // Convert 0–1 decimal to percentage integer; or treat >1 as a direct percentage (must be whole number)
-  if (n < 0) return null
-  if (n > 1 && !Number.isInteger(n)) return null  // e.g. /[1.5] is ambiguous — reject
+  if (isNaN(n) || n < 0) return null
+  // Reject non-integer values greater than 1 (e.g. /[1.5] is ambiguous)
+  if (n > 1 && !Number.isInteger(n)) return null
   const pct = n <= 1 ? n * 100 : n
   if (pct > 100) return null
-  const rounded = Math.round(pct)
-  // Reject if original is too far from a whole number (e.g. 0.333... -> 33.3 -> allow, 0.076 -> 7.6 -> reject)
-  if (Math.abs(pct - rounded) > 0.5) return null
-  return `${base}/${rounded}`
+  // Round to 1 decimal to absorb float noise (0.3 * 100 = 30.000000000000004)
+  const rounded = Math.round(pct * 10) / 10
+  // Reject if value has more than 1 decimal place (e.g. 0.076 → 7.6 → reject)
+  if (rounded !== Math.round(rounded * 10) / 10) return null
+  // Format: drop trailing .0, keep .5 etc. (2.5 stays "2.5", 30.0 becomes "30")
+  const formatted = rounded % 1 === 0 ? String(Math.round(rounded)) : rounded.toFixed(1)
+  return `${base}/${formatted}`
 }
 
 // ─── Main entry point ─────────────────────────────────────────────────────────
