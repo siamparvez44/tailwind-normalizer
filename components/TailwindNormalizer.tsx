@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react"
 import { cn } from "@/lib/utils"
+import { motion, AnimatePresence } from "motion/react"
 import {
   type NormalizedToken,
   type NormalizeResult,
@@ -93,7 +94,7 @@ function TokenChip({ token }: { token: NormalizedToken }) {
     return (
       <span
         title={`was: ${token.original}`}
-        className={cn(base, "cursor-help bg-[#ccff00]/10 text-[#ccff00] hover:bg-[#ccff00]/15")}
+        className={cn(base, "cursor-help bg-[#00c6e7]/10 text-[#00c6e7] hover:bg-[#00c6e7]/15 dark:bg-[#ccff00]/10 dark:text-[#ccff00] dark:hover:bg-[#ccff00]/15")}
       >
         {token.result}
       </span>
@@ -135,10 +136,10 @@ function ModeBadge({ mode }: { mode: "css" | "tailwind" }) {
         "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-[10px] font-medium tracking-wide ring-1",
         mode === "css"
           ? "bg-sky-500/10 text-sky-400 ring-sky-500/20"
-          : "bg-[#ccff00]/10 text-[#ccff00] ring-[#ccff00]/20",
+          : "bg-[#00c6e7]/10 text-[#00c6e7] ring-[#00c6e7]/20 dark:bg-[#ccff00]/10 dark:text-[#ccff00] dark:ring-[#ccff00]/20",
       )}
     >
-      <span className={cn("size-1.5 rounded-full", mode === "css" ? "bg-sky-400" : "bg-[#ccff00]")} />
+      <span className={cn("size-1.5 rounded-full", mode === "css" ? "bg-sky-400" : "bg-[#00c6e7] dark:bg-[#ccff00]")} />
       {mode === "css" ? "CSS" : "Tailwind"}
     </span>
   )
@@ -164,7 +165,7 @@ function CopyButton({
         variant === "default"
           ? "border border-white/10 bg-white/4 px-3 py-1.5 text-zinc-400 hover:border-white/20 hover:bg-white/8 hover:text-zinc-200"
           : "px-2 py-1 text-zinc-600 hover:bg-white/6 hover:text-zinc-400",
-        copied && "border-[#ccff00]/20 bg-[#ccff00]/8 text-[#ccff00]",
+        copied && "border-[#00c6e7]/20 bg-[#00c6e7]/8 text-[#00c6e7] dark:border-[#ccff00]/20 dark:bg-[#ccff00]/8 dark:text-[#ccff00]",
       )}
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
@@ -189,7 +190,7 @@ function VersionToggle({
           className={cn(
             "rounded-md px-3.5 py-1.5 font-mono text-xs font-medium transition-all duration-150",
             ver === v
-              ? "bg-[#ccff00] text-zinc-900 shadow-sm"
+              ? "bg-[#00c6e7] text-white shadow-sm dark:bg-[#ccff00] dark:text-zinc-900"
               : "text-zinc-500 hover:text-zinc-300",
           )}
         >
@@ -207,10 +208,10 @@ function StatBadge({
 }: {
   value: number
   label: string
-  color: "lime" | "violet" | "amber" | "zinc"
+  color: "cyan" | "violet" | "amber" | "zinc"
 }) {
   const colors = {
-    lime: "text-[#ccff00]",
+    cyan: "text-[#00c6e7] dark:text-[#ccff00]",
     violet: "text-violet-400",
     amber: "text-amber-400",
     zinc: "text-zinc-500",
@@ -225,9 +226,9 @@ function StatBadge({
   )
 }
 
-function LegendDot({ color }: { color: "lime" | "violet" | "amber" }) {
+function LegendDot({ color }: { color: "cyan" | "violet" | "amber" }) {
   const colors = {
-    lime: "bg-[#ccff00]/40",
+    cyan: "bg-[#00c6e7]/40 dark:bg-[#ccff00]/40",
     violet: "bg-violet-400/40",
     amber: "bg-amber-400/40",
   }
@@ -236,9 +237,9 @@ function LegendDot({ color }: { color: "lime" | "violet" | "amber" }) {
 
 function EmptyOutput() {
   return (
-    <div className="flex h-full min-h-50 flex-col items-center justify-center gap-2 text-center">
-      <div className="flex size-9 items-center justify-center rounded-xl border border-white/8 bg-white/3">
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className="text-zinc-700">
+    <div className="flex w-full flex-1 flex-col items-center justify-center gap-2 text-center py-8">
+      <div className="flex size-10 items-center justify-center rounded-lg border border-zinc-200 dark:border-zinc-700/50 bg-zinc-50 dark:bg-white/5">
+        <svg width="18" height="18" viewBox="0 0 16 16" fill="none" className="text-zinc-400 dark:text-zinc-600">
           <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
           <rect x="9" y="1.5" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
           <rect x="1.5" y="9" width="5.5" height="5.5" rx="1.5" stroke="currentColor" strokeWidth="1.2" />
@@ -246,8 +247,8 @@ function EmptyOutput() {
         </svg>
       </div>
       <div>
-        <p className="text-sm text-zinc-600">Output will appear here</p>
-        <p className="mt-0.5 text-xs text-zinc-700">Hover tokens to see what changed</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">Output will appear here</p>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-500">Hover tokens to see what changed</p>
       </div>
     </div>
   )
@@ -358,37 +359,60 @@ export function TailwindNormalizer({
   const hasArbitrary = (result?.stats.arbitrary ?? 0) > 0
 
   return (
-    <div className={cn("flex flex-col gap-6", className)}>
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5, ease: "easeOut" }}
+      className={cn("flex flex-col gap-6", className)}
+    >
 
       {/* ── Header row ── */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <motion.div
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.4, delay: 0.05 }}
+        className="flex flex-wrap items-center justify-between gap-3"
+      >
         <VersionToggle ver={ver} onChange={handleVersionChange} />
         <kbd className="hidden items-center gap-1 rounded-md border border-white/8 bg-white/3 px-2 py-1 font-mono text-[11px] text-zinc-600 sm:inline-flex">
           <span className="text-[10px]">⌘</span> Enter to normalize
         </kbd>
-      </div>
+      </motion.div>
 
       {/* ── v4 info banner ── */}
-      {ver === 4 && (
-        <div className="flex items-start gap-3 rounded-xl border border-[#ccff00]/10 bg-[#ccff00]/3 px-4 py-3">
-          <span className="mt-px shrink-0 text-[#ccff00]/60">
-            <InfoIcon />
-          </span>
-          <p className="text-[12px] leading-relaxed text-zinc-500">
-            v4 font sizes:{" "}
-            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">text-xs</code>=12px{" "}
-            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">text-sm</code>=14px{" "}
-            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">text-base</code>=16px.{" "}
-            Radius:{" "}
-            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">rounded-xs</code>=2px{" "}
-            <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">rounded-sm</code>=4px.{" "}
-            Assumes <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#ccff00]">1rem=16px</code>.
-          </p>
-        </div>
-      )}
+      <AnimatePresence>
+        {ver === 4 && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+            className="flex items-start gap-3 rounded-xl border border-[#00c6e7]/20 bg-[#00c6e7]/5 px-4 py-3 dark:border-[#ccff00]/20 dark:bg-[#ccff00]/5"
+          >
+            <span className="mt-px shrink-0 text-[#00c6e7]/60 dark:text-[#ccff00]/60">
+              <InfoIcon />
+            </span>
+            <p className="text-[12px] leading-relaxed text-zinc-500">
+              v4 font sizes:{" "}
+              <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#00c6e7] dark:text-[#ccff00]">text-xs</code>=12px{" "}
+              <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#00c6e7] dark:text-[#ccff00]">text-sm</code>=14px{" "}
+              <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#00c6e7] dark:text-[#ccff00]">text-base</code>=16px.{" "}
+              Radius:{" "}
+              <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#00c6e7] dark:text-[#ccff00]">rounded-xs</code>=2px{" "}
+              <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#00c6e7] dark:text-[#ccff00]">rounded-sm</code>=4px.{" "}
+              Assumes <code className="rounded bg-white/6 px-1 font-mono text-[11px] text-[#00c6e7] dark:text-[#ccff00]">1rem=16px</code>.
+            </p>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── Editor + Output (side-by-side on lg) ── */}
-      <div className="grid gap-4 lg:grid-cols-2">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.4, delay: 0.1 }}
+        className="grid gap-4 lg:grid-cols-2"
+      >
 
         {/* Input */}
         <div className="flex flex-col gap-2">
@@ -417,12 +441,12 @@ export function TailwindNormalizer({
               spellCheck={false}
               rows={10}
               className={cn(
-                "w-full rounded-xl border bg-white/2.5 px-4 py-3.5",
-                "font-mono text-[13px] leading-relaxed text-zinc-200",
-                "placeholder:text-zinc-700/60",
-                "outline-none transition-all duration-150 resize-y",
-                "border-white/8 hover:border-white/12",
-                "focus:border-[#ccff00]/25 focus:bg-[#ccff00]/1.5 focus:shadow-[0_0_0_3px_rgba(204,255,0,0.04)]",
+                "w-full rounded-lg border bg-white px-4 py-3 dark:bg-zinc-900/30",
+                "font-mono text-sm leading-relaxed text-zinc-800 dark:text-zinc-100",
+                "placeholder:text-zinc-400 dark:placeholder:text-zinc-500",
+                "outline-none transition-colors duration-150 resize-y",
+                "border-zinc-200 dark:border-zinc-700/50 hover:border-zinc-300 dark:hover:border-zinc-600/50",
+                "focus:border-[#00c6e7] dark:focus:border-[#ccff00]/50 focus:ring-1 focus:ring-[#00c6e7]/20 dark:focus:ring-[#ccff00]/20",
               )}
             />
           </div>
@@ -432,11 +456,11 @@ export function TailwindNormalizer({
             disabled={!input.trim()}
             className={cn(
               "flex h-10 w-full items-center justify-center gap-2 rounded-lg",
-              "font-mono text-sm font-semibold tracking-wide",
-              "transition-all duration-150 active:scale-[0.985]",
-              "bg-[#ccff00] text-zinc-900",
-              "hover:bg-[#d9ff33] hover:shadow-[0_0_24px_rgba(204,255,0,0.2)]",
-              "disabled:cursor-not-allowed disabled:opacity-20 disabled:shadow-none",
+              "font-semibold text-sm",
+              "transition-all duration-200 active:scale-95",
+              "bg-[#00c6e7] text-white hover:bg-[#00b5d4] shadow-sm dark:bg-[#ccff00] dark:text-zinc-900 dark:hover:bg-[#b8e600] dark:shadow-lg/10",
+              "hover:shadow-md hover:shadow-[#00c6e7]/20 dark:hover:shadow-[#ccff00]/20",
+              "disabled:cursor-not-allowed disabled:opacity-50 disabled:shadow-none disabled:bg-zinc-300 dark:disabled:bg-zinc-700",
             )}
           >
             <ArrowRight />
@@ -455,16 +479,32 @@ export function TailwindNormalizer({
 
           <div
             className={cn(
-              "flex min-h-64.5 flex-1 flex-col rounded-xl border transition-colors duration-150",
+              "flex min-h-64.5 flex-1 flex-col items-center justify-center rounded-xl border transition-colors duration-150",
               hasResult
-                ? "border-white/10 bg-white/2.5"
-                : "border-white/6 bg-white/1.5",
+                ? "dark:border-white/10 bg-white/2.5 "
+                : "dark:border-white/6 bg-white/1.5",
             )}
           >
-            {!hasResult ? (
-              <EmptyOutput />
-            ) : (
-              <div className="flex flex-col gap-0 divide-y divide-white/6">
+            <AnimatePresence mode="wait">
+              {!hasResult ? (
+                <motion.div
+                  key="empty"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <EmptyOutput />
+                </motion.div>
+              ) : (
+                <motion.div
+                  key="result"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-0 divide-y divide-white/6"
+                >
 
                 {/* Token area */}
                 <div className="flex flex-wrap gap-1 px-4 py-3.5 leading-loose">
@@ -477,7 +517,7 @@ export function TailwindNormalizer({
                 <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
                     {totalReplaced > 0 && (
-                      <StatBadge value={totalReplaced} label="normalized" color="lime" />
+                      <StatBadge value={totalReplaced} label="normalized" color="cyan" />
                     )}
                     {hasDeprecated && (
                       <StatBadge value={result.stats.deprecated} label="deprecated" color="violet" />
@@ -495,7 +535,7 @@ export function TailwindNormalizer({
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 px-4 py-2.5">
                     {totalReplaced > 0 && (
                       <span className="flex items-center gap-1.5 text-[11px] text-zinc-600">
-                        <LegendDot color="lime" /> Replaced
+                        <LegendDot color="cyan" /> Replaced
                       </span>
                     )}
                     {hasDeprecated && (
@@ -510,39 +550,69 @@ export function TailwindNormalizer({
                     )}
                   </div>
                 )}
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       {/* ── Showcase ── */}
-      <div className="mt-4">
-        <div className="mb-4 flex items-center gap-3">
-          <div className="h-px flex-1 bg-white/6" />
-          <span className="shrink-0 text-[11px] font-medium uppercase tracking-widest text-zinc-700">
-            Common replacements · v{ver}
-          </span>
-          <div className="h-px flex-1 bg-white/6" />
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
+        className="mt-12"
+      >
+        <div className="mb-4 flex items-center justify-between gap-3">
+          <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Common Replacements</h3>
+          <div className="inline-flex items-center gap-2">
+            <span className="rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-[11px] font-medium text-zinc-600 dark:border-zinc-700/60 dark:bg-zinc-900/50 dark:text-zinc-400">
+              v{ver}
+            </span>
+            <span className="rounded-md border border-[#00c6e7]/20 bg-[#00c6e7]/8 px-2 py-1 text-[11px] font-medium text-[#00c6e7] dark:border-[#ccff00]/20 dark:bg-[#ccff00]/8 dark:text-[#ccff00]">
+              {showcase.length} examples
+            </span>
+          </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-px sm:grid-cols-2 lg:grid-cols-3">
+        <motion.div
+          className="grid grid-cols-1 gap-3 lg:grid-cols-2"
+          initial="hidden"
+          animate="visible"
+          variants={{
+            hidden: { opacity: 0 },
+            visible: {
+              opacity: 1,
+              transition: {
+                staggerChildren: 0.04,
+              },
+            },
+          }}
+        >
           {showcase.map(([from, to]) => (
-            <div
+            <motion.div
               key={from}
-              className="group flex items-center gap-2 rounded-md px-3 py-2 transition-colors duration-100 hover:bg-white/4"
+              variants={{
+                hidden: { opacity: 0, y: 8 },
+                visible: { opacity: 1, y: 0 },
+              }}
+              transition={{ duration: 0.3 }}
+              className="group grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-700/50 dark:bg-zinc-900/30"
             >
-              <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-zinc-600 line-through decoration-zinc-700/60">
+              <code className="min-w-0 truncate rounded-md bg-zinc-50 px-2 py-1.5 font-mono text-xs text-zinc-500 line-through decoration-zinc-300 dark:bg-zinc-800/70 dark:text-zinc-500 dark:decoration-zinc-700">
                 {from}
               </code>
-              <span className="shrink-0 text-zinc-700 transition-colors group-hover:text-zinc-500">
+              <span className="shrink-0 rounded-md bg-zinc-100 p-1 text-zinc-400 transition-colors group-hover:text-[#00c6e7] dark:bg-zinc-800 dark:text-zinc-600 dark:group-hover:text-[#ccff00]">
                 <ArrowRight />
               </span>
-              <code className="min-w-0 flex-1 truncate font-mono text-[11px] text-[#ccff00]">{to}</code>
-            </div>
+              <code className="min-w-0 truncate rounded-md bg-[#00c6e7]/8 px-2 py-1.5 font-mono text-xs font-semibold text-[#00c6e7] dark:bg-[#ccff00]/12 dark:text-[#ccff00]">
+                {to}
+              </code>
+            </motion.div>
           ))}
-        </div>
-      </div>
-    </div>
+        </motion.div>
+      </motion.div>
+    </motion.div>
   )
 }
